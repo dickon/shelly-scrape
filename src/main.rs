@@ -36,14 +36,26 @@ struct Args {
     /// Scrape interval in seconds
     #[arg(long, default_value = "60")]
     interval: u64,
+    
+    /// Enable verbose debug logging
+    #[arg(short, long)]
+    verbose: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging
-    tracing_subscriber::fmt::init();
-    
     let args = Args::parse();
+    
+    // Initialize logging based on verbose flag
+    if args.verbose {
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .init();
+    } else {
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::INFO)
+            .init();
+    }
     
     info!("Starting Shelly scraper");
     
@@ -165,6 +177,8 @@ async fn is_potential_shelly_device(ip: &str) -> bool {
     
     match client.get(&url).timeout(std::time::Duration::from_secs(3)).send().await {
         Ok(response) => {
+            // log the response
+            debug!("Response from {}: {:?}", ip, response);
             // Check if response looks like a Shelly device
             if let Ok(text) = response.text().await {
                 let text_lower = text.to_lowercase();
