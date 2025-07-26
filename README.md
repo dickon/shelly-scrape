@@ -1,5 +1,7 @@
 # Shelly Scrape
 
+WARNING: Pretty much vibe coded using Claude Sonnet.
+
 Scrape data from Shelly power monitoring and push to Influx.
 
 ## Getting Started
