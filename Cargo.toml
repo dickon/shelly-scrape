@@ -5,7 +5,7 @@ edition = "2024"
 description = "Scrape data from Shelly power monitoring and push to Influx"
 authors = ["Your Name <your.email@example.com>"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/shelly-scrape"
+repository = "https://github.com/dickon/shelly-scrape"
 
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }

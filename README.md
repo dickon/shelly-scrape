@@ -10,7 +10,7 @@ This Rust application collects power monitoring data from Shelly IoT devices and
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/dickon/shelly-scrape.git
 cd shelly-scrape
 
 # Build the project
