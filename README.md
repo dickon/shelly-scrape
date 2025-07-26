@@ -8,7 +8,12 @@ This Rust application collects power monitoring data from Shelly IoT devices and
 
 ## Installation
 
+Optionally, make sure nmap is installed; it can be used for scanning your 
+network for Shelly devices.
+
+
 ```bash
+
 # Clone the repository
 git clone https://github.com/dickon/shelly-scrape.git
 cd shelly-scrape

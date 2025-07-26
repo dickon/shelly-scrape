@@ -158,28 +158,93 @@ fn extract_device_info_from_nmap_line(line: &str) -> Option<(String, Option<Stri
 }
 
 async fn is_potential_shelly_device(ip: &str) -> bool {
-    // Try to connect to the Shelly device's web interface
     let client = reqwest::Client::new();
+    
+    // First, try to connect to the Shelly device's web interface
     let url = format!("http://{}/shelly", ip);
     
     match client.get(&url).timeout(std::time::Duration::from_secs(3)).send().await {
         Ok(response) => {
             // Check if response looks like a Shelly device
             if let Ok(text) = response.text().await {
-                text.to_lowercase().contains("shelly")
-            } else {
-                false
+                let text_lower = text.to_lowercase();
+                // Exclude cameras explicitly (Picvision, Hikvision, etc.)
+                if text_lower.contains("picvision") || 
+                   text_lower.contains("hikvision") || 
+                   text_lower.contains("hik-vision") ||
+                   text_lower.contains("camera") ||
+                   text_lower.contains("ipcam") ||
+                   text_lower.contains("video") {
+                    return false;
+                }
+                return text_lower.contains("shelly");
             }
+            false
         }
         Err(_) => {
             // Also try the status endpoint
             let status_url = format!("http://{}/status", ip);
             match client.get(&status_url).timeout(std::time::Duration::from_secs(3)).send().await {
-                Ok(response) => response.status().is_success(),
+                Ok(response) => {
+                    if let Ok(text) = response.text().await {
+                        let text_lower = text.to_lowercase();
+                        // Exclude cameras from status endpoint too (Picvision, Hikvision, etc.)
+                        if text_lower.contains("picvision") || 
+                           text_lower.contains("hikvision") || 
+                           text_lower.contains("hik-vision") ||
+                           text_lower.contains("camera") ||
+                           text_lower.contains("ipcam") ||
+                           text_lower.contains("video") {
+                            return false;
+                        }
+                        // Check for Shelly-specific fields in status response
+                        text_lower.contains("shelly") || 
+                        text_lower.contains("wifi_sta") || 
+                        text_lower.contains("meter") ||
+                        text_lower.contains("relay")
+                    } else {
+                        // If we can't read the response but got a successful status, 
+                        // do additional checks
+                        check_shelly_endpoints(&client, ip).await
+                    }
+                }
                 Err(_) => false,
             }
         }
     }
+}
+
+async fn check_shelly_endpoints(client: &reqwest::Client, ip: &str) -> bool {
+    // Try additional Shelly-specific endpoints to confirm it's not a camera
+    let endpoints = ["/settings", "/ota", "/meter/0"];
+    
+    for endpoint in &endpoints {
+        let url = format!("http://{}{}", ip, endpoint);
+        if let Ok(response) = client.get(&url).timeout(std::time::Duration::from_secs(2)).send().await {
+            if response.status().is_success() {
+                if let Ok(text) = response.text().await {
+                    let text_lower = text.to_lowercase();
+                    // Definitely exclude if it mentions cameras (Picvision, Hikvision, etc.)
+                    if text_lower.contains("picvision") || 
+                       text_lower.contains("hikvision") || 
+                       text_lower.contains("hik-vision") ||
+                       text_lower.contains("camera") ||
+                       text_lower.contains("ipcam") ||
+                       text_lower.contains("video") {
+                        return false;
+                    }
+                    // Look for Shelly-specific content
+                    if text_lower.contains("shelly") || 
+                       text_lower.contains("relay") || 
+                       text_lower.contains("meter") {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    
+    false
 }
 
 async fn scrape_and_push(args: &Args, shelly_ip: &str) -> Result<()> {
