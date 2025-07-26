@@ -4,6 +4,11 @@ WARNING: Pretty much vibe coded using Claude Sonnet.
 
 Scrape data from Shelly power monitoring and push to Influx.
 
+My motivation is to supplment my circuit level home mains consumption with some Shelly
+hardware to get better insights. For instance on one circuit I have a router, two switches
+which also power 5 cameras, an NVR/NAS and wifi access points, as well as some other
+gadgets, so it's hard to tell what's going with influx.
+
 ## Getting Started
 
 This Rust application collects power monitoring data from Shelly IoT devices and stores it in InfluxDB for analysis and visualization.
